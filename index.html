@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>MOPSENTRY MOBILE</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #050505;
+            color: white;
+            font-family: Arial, sans-serif;
+            min-height: 100vh;
+        }
+
+        .app {
+            width: 100%;
+            max-width: 500px;
+            margin: auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .dot {
+            width: 9px;
+            height: 9px;
+            background: #22c55e;
+            border-radius: 50%;
+        }
+
+        .balance-card {
+            background: #0d0d0d;
+            border: 1px solid #222;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 15px;
+        }
+
+        .label {
+            color: #777;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .balance {
+            font-size: 36px;
+            font-weight: bold;
+            margin-top: 8px;
+        }
+
+        .profit {
+            color: #22c55e;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .section {
+            margin-top: 20px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
+        .trade {
+            background: #0d0d0d;
+            border: 1px solid #222;
+            border-radius: 14px;
+            padding: 18px;
+            margin-bottom: 10px;
+        }
+
+        .trade-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .symbol {
+            font-weight: bold;
+        }
+
+        .buy {
+            color: #22c55e;
+            font-size: 13px;
+        }
+
+        .trade-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .value {
+            margin-top: 4px;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        button {
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .start {
+            background: #22c55e;
+            color: #000;
+        }
+
+        .stop {
+            background: #dc2626;
+            color: white;
+        }
+
+        .footer {
+            text-align: center;
+            color: #444;
+            font-size: 11px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="app">
+
+    <div class="header">
+        <div class="logo">MOPSENTRY</div>
+
+        <div class="status">
+            <span class="dot"></span>
+            EA ONLINE
+        </div>
+    </div>
+
+
+    <div class="balance-card">
+
+        <div class="label">Account Balance</div>
+
+        <div class="balance">
+            $10,000.00
+        </div>
+
+        <div class="profit">
+            +$125.40 Today
+        </div>
+
+    </div>
+
+
+    <div class="section">
+
+        <div class="section-title">
+            Open Trade
+        </div>
+
+        <div class="trade">
+
+            <div class="trade-top">
+
+                <div class="symbol">
+                    XAUUSD
+                </div>
+
+                <div class="buy">
+                    BUY
+                </div>
+
+            </div>
+
+
+            <div class="trade-info">
+
+                <div>
+                    <div class="label">Lot</div>
+                    <div class="value">0.01</div>
+                </div>
+
+                <div>
+                    <div class="label">Entry</div>
+                    <div class="value">2650.40</div>
+                </div>
+
+                <div>
+                    <div class="label">Stop Loss</div>
+                    <div class="value">2640.00</div>
+                </div>
+
+                <div>
+                    <div class="label">Take Profit</div>
+                    <div class="value">2675.00</div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="section">
+
+        <div class="section-title">
+            EA Control
+        </div>
+
+        <div class="controls">
+
+            <button class="start" onclick="startEA()">
+                START EA
+            </button>
+
+            <button class="stop" onclick="stopEA()">
+                STOP EA
+            </button>
+
+        </div>
+
+    </div>
+
+
+    <div class="footer">
+        MOPSENTRY EA MOBILE
+    </div>
+
+</div>
+
+
+<script>
+
+function startEA() {
+    alert("START command sent");
+}
+
+function stopEA() {
+    alert("STOP command sent");
+}
+
+</script>
+
+</body>
+</html>
