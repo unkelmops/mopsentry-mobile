@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -51,8 +52,16 @@
         .dot {
             width: 9px;
             height: 9px;
-            background: #22c55e;
+            background: #777;
             border-radius: 50%;
+        }
+
+        .dot.online {
+            background: #22c55e;
+        }
+
+        .dot.offline {
+            background: #dc2626;
         }
 
         .balance-card {
@@ -74,12 +83,17 @@
             font-size: 36px;
             font-weight: bold;
             margin-top: 8px;
+            word-break: break-word;
         }
 
         .profit {
             color: #22c55e;
             margin-top: 8px;
             font-size: 14px;
+        }
+
+        .profit.negative {
+            color: #dc2626;
         }
 
         .section {
@@ -144,6 +158,11 @@
             cursor: pointer;
         }
 
+        button:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
         .start {
             background: #22c55e;
             color: #000;
@@ -154,11 +173,24 @@
             color: white;
         }
 
+        .last-update {
+            margin-top: 12px;
+            color: #555;
+            font-size: 11px;
+        }
+
         .footer {
             text-align: center;
             color: #444;
             font-size: 11px;
             margin-top: 30px;
+        }
+
+        .error {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: 10px;
+            display: none;
         }
     </style>
 </head>
@@ -168,25 +200,39 @@
 <div class="app">
 
     <div class="header">
-        <div class="logo">MOPSENTRY</div>
+
+        <div class="logo">
+            MOPSENTRY
+        </div>
 
         <div class="status">
-            <span class="dot"></span>
-            EA ONLINE
+            <span id="statusDot" class="dot"></span>
+            <span id="statusText">CONNECTING...</span>
         </div>
+
     </div>
 
 
     <div class="balance-card">
 
-        <div class="label">Account Balance</div>
-
-        <div class="balance">
-            $10,000.00
+        <div class="label">
+            Account Balance
         </div>
 
-        <div class="profit">
-            +$125.40 Today
+        <div id="balance" class="balance">
+            $0.00
+        </div>
+
+        <div id="profit" class="profit">
+            P/L $0.00
+        </div>
+
+        <div id="lastUpdate" class="last-update">
+            Waiting for EA...
+        </div>
+
+        <div id="errorMessage" class="error">
+            Unable to connect to EA.
         </div>
 
     </div>
@@ -195,19 +241,19 @@
     <div class="section">
 
         <div class="section-title">
-            Open Trade
+            EA Status
         </div>
 
         <div class="trade">
 
             <div class="trade-top">
 
-                <div class="symbol">
-                    XAUUSD
+                <div id="symbol" class="symbol">
+                    —
                 </div>
 
-                <div class="buy">
-                    BUY
+                <div id="eaMode" class="buy">
+                    ONLINE
                 </div>
 
             </div>
@@ -216,23 +262,46 @@
             <div class="trade-info">
 
                 <div>
-                    <div class="label">Lot</div>
-                    <div class="value">0.01</div>
+                    <div class="label">
+                        Balance
+                    </div>
+
+                    <div id="balanceSmall" class="value">
+                        —
+                    </div>
                 </div>
 
-                <div>
-                    <div class="label">Entry</div>
-                    <div class="value">2650.40</div>
-                </div>
 
                 <div>
-                    <div class="label">Stop Loss</div>
-                    <div class="value">2640.00</div>
+                    <div class="label">
+                        Equity
+                    </div>
+
+                    <div id="equity" class="value">
+                        —
+                    </div>
                 </div>
 
+
                 <div>
-                    <div class="label">Take Profit</div>
-                    <div class="value">2675.00</div>
+                    <div class="label">
+                        Current P/L
+                    </div>
+
+                    <div id="currentProfit" class="value">
+                        —
+                    </div>
+                </div>
+
+
+                <div>
+                    <div class="label">
+                        EA ID
+                    </div>
+
+                    <div class="value">
+                        MOPSENTRY_EA
+                    </div>
                 </div>
 
             </div>
@@ -250,11 +319,17 @@
 
         <div class="controls">
 
-            <button class="start" onclick="startEA()">
+            <button
+                class="start"
+                disabled
+                onclick="startEA()">
                 START EA
             </button>
 
-            <button class="stop" onclick="stopEA()">
+            <button
+                class="stop"
+                disabled
+                onclick="stopEA()">
                 STOP EA
             </button>
 
@@ -272,15 +347,380 @@
 
 <script>
 
-function startEA() {
-    alert("START command sent");
+//==============================================================//
+// SUPABASE CONFIG
+//==============================================================//
+
+const SUPABASE_URL =
+    "https://zykswpgxfmpjllnlivkd.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_z9qQm67PhhPwpO3jTP3PUw_nM0C4LY-";
+
+const EA_ID =
+    "MOPSENTRY_EA";
+
+
+//==============================================================//
+// FORMAT MONEY
+//==============================================================//
+
+function formatMoney(value) {
+
+    const number = Number(value) || 0;
+
+    return "$" + number.toLocaleString(
+        "en-US",
+        {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }
+    );
 }
 
-function stopEA() {
-    alert("STOP command sent");
+
+//==============================================================//
+// LOAD EA STATUS
+//==============================================================//
+
+async function loadEAStatus() {
+
+    try {
+
+        const endpoint =
+            SUPABASE_URL +
+            "/rest/v1/ea_status" +
+            "?ea_id=eq." +
+            encodeURIComponent(EA_ID) +
+            "&select=*";
+
+        const response =
+            await fetch(
+                endpoint,
+                {
+                    method: "GET",
+
+                    headers: {
+                        "apikey": SUPABASE_KEY,
+                        "Authorization":
+                            "Bearer " + SUPABASE_KEY
+                    }
+                }
+            );
+
+        if (!response.ok) {
+
+            throw new Error(
+                "HTTP " + response.status
+            );
+        }
+
+
+        const data =
+            await response.json();
+
+
+        if (
+            !data ||
+            data.length === 0
+        ) {
+
+            throw new Error(
+                "EA status not found"
+            );
+        }
+
+
+        updateDashboard(
+            data[0]
+        );
+
+    }
+
+    catch(error) {
+
+        console.error(
+            "Supabase error:",
+            error
+        );
+
+        setOffline();
+    }
 }
+
+
+//==============================================================//
+// UPDATE DASHBOARD
+//==============================================================//
+
+function updateDashboard(data) {
+
+    const balance =
+        Number(data.balance) || 0;
+
+    const equity =
+        Number(data.equity) || 0;
+
+    const profit =
+        equity - balance;
+
+
+    //==========================================================//
+    // CHECK LAST UPDATE
+    //==========================================================//
+
+    const updatedAt =
+        new Date(
+            data.updated_at
+        );
+
+    const now =
+        new Date();
+
+    const secondsAgo =
+        (
+            now.getTime() -
+            updatedAt.getTime()
+        ) / 1000;
+
+
+    const isOnline =
+        data.status === "ONLINE" &&
+        secondsAgo <= 15;
+
+
+    if(isOnline) {
+
+        setOnline();
+
+    } else {
+
+        setOffline();
+
+    }
+
+
+    //==========================================================//
+    // ACCOUNT
+    //==========================================================//
+
+    document.getElementById(
+        "balance"
+    ).textContent =
+        formatMoney(balance);
+
+
+    document.getElementById(
+        "balanceSmall"
+    ).textContent =
+        formatMoney(balance);
+
+
+    document.getElementById(
+        "equity"
+    ).textContent =
+        formatMoney(equity);
+
+
+    document.getElementById(
+        "currentProfit"
+    ).textContent =
+        formatMoney(profit);
+
+
+    document.getElementById(
+        "profit"
+    ).textContent =
+        "P/L " +
+        formatMoney(profit);
+
+
+    //==========================================================//
+    // PROFIT COLOR
+    //==========================================================//
+
+    const profitElement =
+        document.getElementById(
+            "profit"
+        );
+
+    if(profit >= 0) {
+
+        profitElement.classList.remove(
+            "negative"
+        );
+
+    } else {
+
+        profitElement.classList.add(
+            "negative"
+        );
+    }
+
+
+    //==========================================================//
+    // SYMBOL
+    //==========================================================//
+
+    document.getElementById(
+        "symbol"
+    ).textContent =
+        data.symbol || "—";
+
+
+    //==========================================================//
+    // LAST UPDATE
+    //==========================================================//
+
+    if(data.updated_at) {
+
+        document.getElementById(
+            "lastUpdate"
+        ).textContent =
+            "Last update: " +
+            updatedAt.toLocaleTimeString();
+    }
+
+
+    document.getElementById(
+        "errorMessage"
+    ).style.display =
+        "none";
+}
+
+
+//==============================================================//
+// ONLINE
+//==============================================================//
+
+function setOnline() {
+
+    const dot =
+        document.getElementById(
+            "statusDot"
+        );
+
+    const text =
+        document.getElementById(
+            "statusText"
+        );
+
+    const mode =
+        document.getElementById(
+            "eaMode"
+        );
+
+
+    dot.classList.remove(
+        "offline"
+    );
+
+    dot.classList.add(
+        "online"
+    );
+
+
+    text.textContent =
+        "EA ONLINE";
+
+
+    mode.textContent =
+        "ONLINE";
+
+
+    mode.style.color =
+        "#22c55e";
+}
+
+
+//==============================================================//
+// OFFLINE
+//==============================================================//
+
+function setOffline() {
+
+    const dot =
+        document.getElementById(
+            "statusDot"
+        );
+
+    const text =
+        document.getElementById(
+            "statusText"
+        );
+
+    const mode =
+        document.getElementById(
+            "eaMode"
+        );
+
+
+    dot.classList.remove(
+        "online"
+    );
+
+    dot.classList.add(
+        "offline"
+    );
+
+
+    text.textContent =
+        "EA OFFLINE";
+
+
+    mode.textContent =
+        "OFFLINE";
+
+
+    mode.style.color =
+        "#dc2626";
+
+
+    document.getElementById(
+        "errorMessage"
+    ).style.display =
+        "block";
+}
+
+
+//==============================================================//
+// START / STOP PLACEHOLDERS
+//==============================================================//
+
+function startEA() {
+
+    alert(
+        "Remote EA control is not enabled yet."
+    );
+}
+
+
+function stopEA() {
+
+    alert(
+        "Remote EA control is not enabled yet."
+    );
+}
+
+
+//==============================================================//
+// INITIAL LOAD
+//==============================================================//
+
+loadEAStatus();
+
+
+//==============================================================//
+// REFRESH EVERY 5 SECONDS
+//==============================================================//
+
+setInterval(
+    loadEAStatus,
+    5000
+);
 
 </script>
 
 </body>
 </html>
+```
